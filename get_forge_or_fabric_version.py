@@ -12,8 +12,8 @@ def get_forge_or_fabric_version_from_manifest(path):
             if modloader["primary"] == True:
 
                 if "fabric" in modloader["id"].lower():
-                    #return "fabric", minecraft_version + "-" + modloader["id"][7:]
-                    return "fabric", minecraft_version
+                    return "fabric", minecraft_version + "-" + modloader["id"][7:]
+                    # return "fabric", minecraft_version
 
                 if "forge" in modloader["id"].lower():
                     return "forge", minecraft_version + "-" + modloader["id"][6:]

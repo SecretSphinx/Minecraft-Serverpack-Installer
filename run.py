@@ -351,6 +351,8 @@ else:
                 os.chdir(f"{this_dir}/{folder_name}")
                 print("Running Fabric Installer. This may take a minute or two...")
                 # Downloads the minecraft server version as well with -downloadMinecraft
+                # os.system(f"java -jar {name} server -downloadMinecraft")
+                # TODO new fabric installers require -loader {loader_version} -mcversion {mc_version}, this may not work
                 os.system(f"java -jar {name} server -downloadMinecraft")
                 print("Finished running fabric installer")
                 os.remove(name)
@@ -581,8 +583,12 @@ else:
                     elif modpack_jar_type == "fabric":
                         # ! Will manually have to be changed as there is no hosted link to always get the latest fabric loader
                         fabric_installer_url = 'https://maven.fabricmc.net/net/fabricmc/fabric-installer/0.10.2/fabric-installer-0.10.2.jar'
+                        fabric_installer = True
                         os.chdir(f"{this_dir}/{folder_name}")
                         filename = download(fabric_installer_url)
+                        # Getting version from manifest (mc_version-fabric_version) and assigning it to mc_version and loader_version
+                        version_parts = grabbed_manifest_version[1].split('-')
+                        mc_version, loader_version = version_parts
                         for name in glob.glob(glob.escape(this_dir + "/" + folder_name + "/") + filename):
                             print(name)
                             if name:
@@ -592,29 +598,33 @@ else:
                                 print(
                                     "Running Fabric Loader. This may take a minute or two...")
                                 os.system(
-                                    f'java -jar "{name}" server -mcversion {modpack_jar_version} -downloadMinecraft')
+                                    f'java -jar "{name}" server -loader {loader_version} -mcversion {mc_version} -downloadMinecraft')
+                                # os.system(
+                                #     f'java -jar "{name}" server -mcversion {modpack_jar_version} -downloadMinecraft')
                                 print("Finished running Fabric Loader")
                                 os.remove(name)
                                 print("Removed Fabric Loader jar")
                                 try:
-                                    move("server.jar", "vanilla.jar")
-                                    print("Renamed server.jar to vanilla.jar")
+                                    move("server.jar", f"{this_dir}/vanilla.jar")
+                                    print(f"Renamed server.jar to {this_dir}/vanilla.jar")
                                 except:
-                                    pass
+                                    print("failed to rename server.jar to vanilla.jar")
                                 try:
-                                    move("fabric-server-launch.jar", "server.jar")
+                                    move("fabric-server-launch.jar", f"{this_dir}/server.jar")
                                     renamed_serverjar = True
                                     print(
-                                        "Renamed fabric-server-launch.jar to server.jar")
+                                        f"Renamed fabric-server-launch.jar to {this_dir}/server.jar")
                                 except:
-                                    pass
+                                    print("failed to rename fabric-server-launch.jar to server.jar")
                                 try:
                                     os.system(
                                         'echo serverJar=vanilla.jar > fabric-server-launcher.properties')
                                     print(
                                         "Changed fabric-server-launcher jar to renamed vanilla.jar")
+                                    move("fabric-server-launcher.properties", f"{this_dir}/fabric-server-launcher.properties")
+                                    print(f"Moved fabric-server-launcher.properties to {this_dir}/fabric-server-launcher.properties")
                                 except:
-                                    pass
+                                    print(f"failed to move fabric-launcher-server.properties to {this_dir}/fabric-launcher-server.properties")
 
 # Garbage files cleanup
 print("Running garbage cleanup...")
@@ -666,10 +676,7 @@ if clean_startup_script:
         if name:
             print("Removing", name)
             os.remove(name)
-# for name in glob.glob(glob.escape(this_dir + "/" + folder_name + "/") + "manifest.json"):
-#     if name:
-#         print("Removing", name)
-#         os.remove(name)
+
 has_forge_jar = False
 for name in glob.glob(glob.escape(this_dir + "/" + folder_name + "/") + "forge*.jar"):
     if name:
@@ -679,7 +686,7 @@ for name in glob.glob(glob.escape(this_dir + "/" + folder_name + "/") + "forge*.
         has_forge_jar = True
 if not has_forge_jar:
     for name in glob.glob(glob.escape(this_dir + "/" + folder_name + "/") + "*.jar"):
-        if 'minecraft' not in name and 'fabric' not in name:
+        if 'minecraft' not in name and 'fabric' not in name and not fabric_installer:
             print("Renaming", name, "to server.jar")
             os.chdir(f"{this_dir}/{folder_name}")
             os.rename(name, "server.jar")
@@ -737,7 +744,6 @@ if not mode == "pterodactyl":
 
                     if operating_system == "Linux":
                         os.system(f"ln -sf {link_from} {link_to}")
-                        #os.symlink(link_from, link_to)
                     # Requires enabling developer mode in windows 10.
                     elif operating_system == "Windows":
                         os.symlink(link_from, link_to)
@@ -773,11 +779,6 @@ if mode == "pterodactyl":
             move(join(this_dir, folder_name, f),
                  join(this_dir, "modpack_folder", f))
     delete_directory(join(this_dir, folder_name))
-
-    # Done in egg install script instead.
-    # os.system("rsync -a /mnt/server/modpack_folder/ /mnt/server/")
-    # os.system("rm -rf /mnt/server/modpack_folder/*")
-    # os.system("rm -r /mnt/server/modpack_folder")
 
     # Forge 1.17+ section with new startup mechanism for ptero (symlink after moving files)
     new_forge_ver = False
