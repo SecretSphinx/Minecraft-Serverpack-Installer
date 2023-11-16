@@ -53,7 +53,7 @@ working_path = args.working_path
 clean_startup_script = args.clean_scripts
 remove_old_files = args.update
 
-exclusions = [ ".gitignore", "download_file.py", "download_modrinth_mods.py", "get_forge_or_fabric_version.py", 
+exclusions = [ ".gitignore", "download_file.py", "download_modrinth_mods.py", "get_forge_or_fabric_version.py",
               "get_modpack_info.py", "requirements.txt", "serverstarter_func.py", "unzip_modpack.py", "README.md",
               "run.py", "__pycache__", ".git", "C-S-D.tar.gz", ".scannerwork", ".vscode"]  # Files to exclude from deletion
 
