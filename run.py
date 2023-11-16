@@ -53,6 +53,34 @@ working_path = args.working_path
 clean_startup_script = args.clean_scripts
 remove_old_files = args.update
 
+exclusions = [ ".gitignore", "download_file.py", "download_modrinth_mods.py", "get_forge_or_fabric_version.py", 
+              "get_modpack_info.py", "requirements.txt", "serverstarter_func.py", "unzip_modpack.py", "README.md",
+              "run.py", "__pycache__", ".git", "C-S-D.tar.gz", ".scannerwork", ".vscode"]  # Files to exclude from deletion
+
+def clean_install_directory(directory, exclusions):
+    print(f"Cleaning install directory: {directory}")
+    if not os.path.exists(directory):
+        print(f"Directory does not exist: {directory}")
+        return
+
+    items_to_remove = []
+    for item in os.listdir(directory):
+        if item not in exclusions:
+            items_to_remove.append(item)
+
+    for item in items_to_remove:
+        item_path = os.path.join(directory, item)
+        try:
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                print(f"Removing file: {item_path}")
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                print(f"Removing directory: {item_path}")
+                rmtree(item_path)
+            print(f"Removed: {item_path}")
+        except Exception as e:
+            print(f"Failed to remove {item_path}: {e}")
+
 interpreter_path = sys.executable
 if provider == "curse" or provider == "technic" or provider == "ftb" or provider == "modrinth":
     minecraft_version = str(
@@ -78,6 +106,8 @@ if working_path:
     os.chdir(working_path)
 else:
     this_dir = os.path.dirname(os.path.realpath(__file__))
+
+clean_install_directory(this_dir, exclusions)
 
 
 def up_one_directory(root, parent):
