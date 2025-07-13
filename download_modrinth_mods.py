@@ -18,15 +18,16 @@ def download_modrinth_mods(path):
                 mod_filename = "Undefined Name"
             if "betterchat" in mod_filename.lower(): # This mod causes issues on servers
                 continue
-            env = mod.get('env') or {}
-            server_env = env.get('server')
-            if server_env:
-                if server_env == "unsupported":
-                    print(f"Detected unsupported server mod {mod_filename}. Skipping download.")
-                    continue
-                elif server_env == "optional":
-                    print(f"Detected optional server mod {mod_filename}. Skipping download.")
-                    continue
+            if mod['env']:
+                if mod['env']['server']:
+                    if mod['env']['server'] == "unsupported":
+                        print(
+                            f"Detected unsupported server mod {mod_filename}. Skipping download.")
+                        continue
+                    elif mod['env']['server'] == "optional":
+                        print(
+                            f"Detected optional server mod {mod_filename}. Skipping download.")
+                        continue
             if mod['downloads']:
                 download(mod['downloads'][0])
 
