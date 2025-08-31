@@ -90,14 +90,14 @@ else:
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-def get_cloudfront_download_url(panel_api_url, modpack_id, version_id):
+def get_cloudfront_download_url(panel_api_url, modpack_id, version_id, server_uuid):
   """Get signed CloudFront URL from panel API"""
   import requests
 
   try:
       # Construct API endpoint URL
-      api_endpoint = f"{panel_api_url.rstrip('/')}/api/client/modpacks/{modpack_id}/{version_id}/download-url"
-
+      api_endpoint = f"{panel_api_url.rstrip('/')}/api/client/servers/modpacks/{modpack_id}/{version_id}/download-url"
+      
       print(f"[CloudFront] Requesting signed URL from: {api_endpoint}")
 
       response = requests.get(api_endpoint, timeout=30)
