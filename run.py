@@ -40,6 +40,16 @@ parser.add_argument("--folder-name", default=False, type=str, action="store")
 # Set working path where modpack should download and install
 parser.add_argument("--working-path", default=False, type=str, action="store")
 
+# DEV RELATED
+parser.add_argument("--use-cloudfront", default=False, action="store_true",
+                 help="Use CloudFront signed URLs from panel API instead of direct S3")
+parser.add_argument("--panel-api-url", type=str, default=False,
+                 help="Panel API base URL for CloudFront signed URLs")
+# DEV RELATED
+
+
+
+
 args = parser.parse_args()
 
 provider = args.provider
@@ -79,6 +89,31 @@ if working_path:
 else:
     this_dir = os.path.dirname(os.path.realpath(__file__))
 
+
+def get_cloudfront_download_url(panel_api_url, modpack_id, version_id):
+  """Get signed CloudFront URL from panel API"""
+  import requests
+
+  try:
+      # Construct API endpoint URL
+      api_endpoint = f"{panel_api_url.rstrip('/')}/api/client/modpacks/{modpack_id}/{version_id}/download-url"
+
+      print(f"[CloudFront] Requesting signed URL from: {api_endpoint}")
+
+      response = requests.get(api_endpoint, timeout=30)
+      response.raise_for_status()
+
+      data = response.json()
+      download_url = data['download_url']
+      expires_in = data.get('expires_in', 600)
+
+      print(f"[CloudFront] Got signed URL, expires in {expires_in} seconds")
+      return download_url
+
+  except Exception as e:
+      print(f"[CloudFront] Failed to get signed URL: {e}")
+      print("[CloudFront] Falling back to standard S3 download...")
+      return None
 
 def up_one_directory(root, parent):
     for filename in os.listdir(join(root, parent)):
@@ -128,8 +163,33 @@ def kill(proc_pid):
 # #FTB_Revelation = 283861 #FTB Serverpack
 
 
-modpack_info = get_server_modpack_url(
-    provider, modpack_id, modpack_version, operating_system, architecture)
+# Check if CloudFront mode is enabled
+if args.use_cloudfront and args.panel_api_url and provider == "curse":
+  print("[CloudFront] CloudFront mode enabled, attempting to get signed URL...")
+  cloudfront_url = get_cloudfront_download_url(args.panel_api_url, modpack_id, modpack_version)
+
+  if cloudfront_url:
+      print(f"[CloudFront] Using CloudFront signed URL for download")
+      # Create a mock modpack_info structure for CloudFront URL
+      modpack_info = [
+          f"CloudFront-{modpack_id}",  # modpack_name
+          {
+              "SpecifiedVersion": cloudfront_url,
+              "LatestReleaseServerpack": None,
+              "LatestBetaServerpack": None,
+              "LatestAlphaServerpack": None,
+              "LatestReleaseNonServerpack": None
+          },
+          None  # modpack_normal_downloadurl
+      ]
+  else:
+      print("[CloudFront] CloudFront failed, using standard method...")
+      modpack_info = get_server_modpack_url(
+          provider, modpack_id, modpack_version, operating_system, architecture)
+else:
+  print("[CloudFront] Using standard S3 download method...")
+  modpack_info = get_server_modpack_url(
+      provider, modpack_id, modpack_version, operating_system, architecture)
 if modpack_info:
     modpack_name = modpack_info[0]
     modpack_urls = modpack_info[1]
